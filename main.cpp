@@ -3,7 +3,7 @@
 #include <boost/program_options.hpp>
 #include <hash_map>
 
-#include "myshell_functions/myshell_functions.h"
+#include "internal_functions/functions.h"
 
 namespace fs = boost::filesystem;
 

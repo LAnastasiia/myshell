@@ -1,4 +1,19 @@
-#include "myshell_functions.h"
+#include "functions.h"
+
+
+//extern int merrno(){}
+
+
+//extern int mpwd(std::string pwd_holder){}
+
+
+//extern int mcd(std::string path){}
+
+
+//extern int mexit(){}
+
+
+//extern int mecho(){}
 
 
 extern int mexport(const std::string& var_name, const std::string& val){
@@ -10,6 +25,7 @@ extern int mexport(const std::string& var_name, const std::string& val){
         char * var_name_ptr = new char[var_name.size() + 1];
         std::copy(var_name.begin(), var_name.end(), var_name_ptr);
         var_name_ptr[var_name.size()] = '\0';
+
         return putenv(var_name_ptr);
     }
 }
