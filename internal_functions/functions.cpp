@@ -1,31 +1,34 @@
 #include "functions.h"
 
 
-//extern int merrno(){}
+// int merrno(){}
 
 
-//extern int mpwd(std::string pwd_holder){}
+// int mpwd(std::string pwd_holder){}
 
 
-//extern int mcd(std::string path){}
+// int mcd(std::string path){}
 
 
-//extern int mexit(){}
+// int mexit(){}
 
 
-//extern int mecho(){}
+// int mecho(){}
 
 
-extern int mexport(const std::string& var_name, const std::string& val){
-    if (! val.empty()){
-        return setenv(var_name.c_str(), val.c_str(), 1);
+ int mexport(int argc, char* argv[]){
+     /**
+     * Set an environment variable (and it's value if given).
+     * @arguments
+       * number of arguments (expected 1 or 2);
+       * pointer to char array containing variable-name and (optional) variable-value;
+     * @return status of execution.
+     */
+     if (argc == 2) {
+         return setenv(argv[0], argv[1], 1);
 
-    } else {
-        // Make a non-const pointer from var_name - as required by putenv.
-        char * var_name_ptr = new char[var_name.size() + 1];
-        std::copy(var_name.begin(), var_name.end(), var_name_ptr);
-        var_name_ptr[var_name.size()] = '\0';
-
-        return putenv(var_name_ptr);
-    }
+     } else if (argc == 1) {
+         return putenv(argv[0]);
+     }
+     return -1;
 }

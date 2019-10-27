@@ -8,28 +8,28 @@
 
 // Output error number.
 // supports [-h | --help]
-extern int merrno();
+int merrno(int argc, char* argv);
 
 // Output current working directory.
 //[-h|--help]
-extern int mpwd(std::string pwd_holder);
+int mpwd(int argc, char* argv);
 
 // Go to the given path.
 //<path> [-h|--help]
-extern int mcd(std::string path);
+int mcd(int argc, char* argv);
 
 // Exit and update the status code.
 // [finish code] [-h|--help]
-extern int mexit();
+int mexit(int argc, char* argv);
 
 // Output given var_name-s or their values.
 // Accepts arbitrary num of var_name. If var_name starts with $ - output it's value lookup. Otherwise - var_name itself.
 // [text|$<var_name>] [text|$<var_name>]  [text|$<var_name>] ...
-extern int mecho();
+int mecho(int argc, char* argv);
 
 // Add global env-variable by given var_name.
 // If such variable already exists - overwrite it's value if also given (val).
 // <var_name>[=VAL]
-extern int mexport(const std::string& var_name, const std::string& val="");
+int mexport(int argc, char* argv[]);
 
 #endif //MYSHELL_MYSHELL_FUNCTIONS_H

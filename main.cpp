@@ -20,9 +20,10 @@ int main(int argc, char *argv[], char* envp[]) {
 
     // Assume every function returns int (status).
     // In case we need another return-type - pass a pointer to some variable of that type as an argument, and then write results into it.
-    std::map <std::string, std::function<int (const std::string&, const std::string&)>> commands_map;
+
+    std::map <std::string, std::function<int (int argc, char* argv[])>> commands_map;
     commands_map.emplace(
-            std::make_pair("mexport", [](const std::string& var, const std::string& val)-> int {return mexport(var, val);} ));
+            std::make_pair("mexport", [](int argc, char* argv[])-> int {return mexport(argc, argv);} ));
 
 
     // MAIN LOOP
@@ -31,15 +32,24 @@ int main(int argc, char *argv[], char* envp[]) {
         std::cout << boost::filesystem::current_path() << std::endl;
         std::cin >> command;
 
-        if (command == "mexport") {
+        // parse options
 
+        if (command == "mexport") {
             // Help.
             if (descriptions_map.find(command) != descriptions_map.end())
                 std::cout << descriptions_map["mexport"] << std::endl;
 
             // Action.
             if (commands_map.find(command) != commands_map.end()){
-                std::cout << std::to_string(commands_map[command]("PATH", "vvv")) << std::endl;
+
+                // test
+                char *args[] = {
+                        (char *) "some_var",
+                        (char *) "some_val",
+                        nullptr
+                };
+                // test
+                std::cout << std::to_string(commands_map["mexport"](2, args)) << std::endl;
             }
 
         } else {
