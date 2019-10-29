@@ -1,6 +1,7 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <string.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -75,21 +76,50 @@ int main(int argc, char** argv, char* envp[]) {
         }
 
         if (parse_arguments(buf, margc, margv) != EXIT_SUCCESS){
+            std::cout << boost::filesystem::current_path();
+            continue;
+        }
+
+        if (strcmp(margv[0], "mexit") == 0){
+            status = mexit(argc, argv);
+            if (status != EXIT_FAILURE) {
+                std::cout << boost::filesystem::current_path();
+                break;
+            }else{
+                std::cout << boost::filesystem::current_path();
+                continue;
+            }
+        }
+
+        if (strcmp(margv[0], "merrno") == 0){
+            status = merrno(margc, margv, status);
+            std::cout << boost::filesystem::current_path();
             continue;
         }
 
         command = margv[0];
-//        std::cout << command << std::endl;
 
-        if (strcmp(margv[0], "mexit") == 0){
-            break;
-        }
         // Action.
         if (commands_map.find(command) != commands_map.end()){
-             status = commands_map[command](margc, margv);
-         } else {
-            // Run external command
-         }
+            status = commands_map[command](margc, margv);
+        } else {
+            //TODO: wildcards, adding local variables
+            pid_t pid = fork();
+
+            if (pid == -1){
+                std::cerr << "Failed to fork()." << std::endl;
+                status = EXIT_FAILURE;
+                std::cout << boost::filesystem::current_path();
+                continue;
+            } else if (pid > 0){
+                waitpid(pid, &status, 0);
+            } else{
+                execve(margv[0], margv, envp);
+                std::cerr << "Parent: Failed to execute " << margv[0] << " \n\tCode: " << errno << std::endl;
+                std::cout << boost::filesystem::current_path();
+                continue;
+            }
+        }
 
         std::cout << boost::filesystem::current_path();
     }
