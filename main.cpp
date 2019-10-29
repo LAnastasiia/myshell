@@ -63,7 +63,8 @@ int main(int argc, char** argv, char* envp[]) {
     commands_map.emplace(
             std::make_pair("mcd", [](int argc, char** argv)-> int {return mcd(argc, argv);} ));
 
-
+    int margc;
+    char** margv;
     char* buf;
     // MAIN LOOP
     std::string command = " ";
@@ -73,19 +74,19 @@ int main(int argc, char** argv, char* envp[]) {
             add_history(buf);
         }
 
-        if (parse_arguments(buf, argc, argv) != EXIT_SUCCESS){
+        if (parse_arguments(buf, margc, margv) != EXIT_SUCCESS){
             continue;
         }
 
-        command = argv[0];
+        command = margv[0];
 //        std::cout << command << std::endl;
 
-         // Action.
-         if (commands_map.find(command) != commands_map.end()){
-             status = commands_map[command](argc, argv);
-             if (command == "mexit"){
-                 break;
-             }
+        if (strcmp(margv[0], "mexit") == 0){
+            break;
+        }
+        // Action.
+        if (commands_map.find(command) != commands_map.end()){
+             status = commands_map[command](margc, margv);
          } else {
             // Run external command
          }

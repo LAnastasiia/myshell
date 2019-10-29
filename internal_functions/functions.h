@@ -9,6 +9,8 @@
 #define MYSHELL_MYSHELL_FUNCTIONS_H
 
 
+bool help_option_enabled(int argc, char** argv);
+
 // Output error number.
 // supports [-h | --help]
 //int merrno(int argc, char** argv);

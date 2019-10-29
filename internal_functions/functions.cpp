@@ -1,24 +1,26 @@
 #include "functions.h"
 
 
-int mpwd(int argc, char** argv){
-    boost::program_options::options_description desc{"Options"};
-    try{
-        desc.add_options()("help,h", "Help screen");
-
-        boost::program_options::variables_map vm;
-        store(boost::program_options::parse_command_line(argc, argv, desc), vm);
-        notify(vm);
-
-        if (vm.count("help")){
-            std::cout << "Usage: mpwd [-h|--help]" << std::endl;
-            std::cout << "Print current path." << std::endl;
-            std::cout << desc << std::endl;
-            return EXIT_SUCCESS;
+bool help_option_enabled(int argc, char** argv){
+    for (int i = 1; i < argc; i++){
+        if (argv[i][0] == '-'){
+            if ((strcmp(argv[i], "-h") == 0) or (strcmp(argv[i], "--help") == 0))
+                return true;
+            else {
+                std::cerr << "Unrecognized option: " << argv[i] << std::endl;
+                return false;
+            }
         }
-    }catch (const boost::program_options::error &ex){
-        std::cerr << ex.what() << '\n';
-        return EXIT_FAILURE;
+    }
+    return false;
+}
+
+
+int mpwd(int argc, char** argv){
+    if (help_option_enabled(argc, argv)){
+        std::cout << "Usage: mpwd [-h|--help]" << std::endl;
+        std::cout << "Print current path." << std::endl;
+        return EXIT_SUCCESS;
     }
 
     char cwd[1024];
@@ -29,22 +31,20 @@ int mpwd(int argc, char** argv){
 
 
 int mcd(int argc, char** argv){
-    boost::program_options::options_description desc{"Options"};
-    try{
-        desc.add_options()("help,h", "Help screen");
-        boost::program_options::variables_map vm;
-        store(boost::program_options::parse_command_line(argc, argv, desc), vm);
-        notify(vm);
+    std::cout << "Before" << std::endl;
+    for(int i = 0; i < argc; i++ ){
+        std::cout << argv[i] << std::endl;
+    }
 
-        if (vm.count("help")){
-            std::cout << "Usage: mcd <path> [-h|--help]" << std::endl;
-            std::cout << "Change current location to <path>." << std::endl;
-            std::cout << desc << std::endl;
-            return EXIT_SUCCESS;
-        }
-    }catch (const boost::program_options::error &ex){
-        std::cerr << ex.what() << '\n';
-        return EXIT_FAILURE;
+    if (help_option_enabled(argc, argv)){
+        std::cout << "Usage: mcd <path> [-h|--help]" << std::endl;
+        std::cout << "Change current location to <path>." << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    std::cout << "After" << std::endl;
+    for(int i = 0; i < argc; i++ ){
+        std::cout << argv[i] << std::endl;
     }
 
     if (argc < 2){
@@ -56,7 +56,7 @@ int mcd(int argc, char** argv){
         if (argv[i][0] != '-'){
             int st = chdir(argv[i]);
             if (st != 0){
-                std::cerr << "Failed to move to " << argv[i] << std::endl;
+                std::cerr << "Failed to move to " << argv[i-1] << std::endl;
                 return EXIT_FAILURE;
             } else{
                 std::cout << argv[i] << std::endl;
