@@ -1,19 +1,19 @@
+#ifndef MYSHELL_MYSHELL_FUNCTIONS_H
+#define MYSHELL_MYSHELL_FUNCTIONS_H
+
 #include <iostream>
 #include <cstdio>
 #include <cstddef>
 #include <string>
 #include <boost/program_options.hpp>
+#include <sstream>
 
 
-#ifndef MYSHELL_MYSHELL_FUNCTIONS_H
-#define MYSHELL_MYSHELL_FUNCTIONS_H
-
-
-bool help_option_enabled(int argc, char** argv);
+int help_option_enabled(int argc, char** argv);
 
 // Output error number.
 // supports [-h | --help]
-//int merrno(int argc, char** argv);
+int merrno(int argc, char** argv, int &my_errno);
 
 // Output current working directory.
 //[-h|--help]
@@ -25,7 +25,7 @@ int mcd(int argc, char** argv);
 
 // Exit and update the status code.
 // [finish code] [-h|--help]
-//int mexit(int argc, char** argv);
+int mexit(int argc, char** argv);
 
 // Output given var_name-s or their values.
 // Accepts arbitrary num of var_name. If var_name starts with $ - output it's value lookup. Otherwise - var_name itself.
