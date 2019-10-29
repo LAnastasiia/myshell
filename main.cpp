@@ -33,8 +33,8 @@ int parse_arguments(char* buf, int &argc, char** &argv){
     }
 
     argc = static_cast<int>(arguments.size());
-    free(argv);
-    argv = (char**) malloc(argc * sizeof(char*));
+//    free(argv);
+    argv = (char**) malloc((argc + 1) * sizeof(char*));
 
     if (argv == nullptr){
         std::cerr << "Unable to allocate array for arguments" << std::endl;
@@ -42,8 +42,9 @@ int parse_arguments(char* buf, int &argc, char** &argv){
     }
 
     for (i = 0; i < argc; i++){
-        argv[i] = const_cast<char*>(arguments[i].c_str());
+        argv[i] = (char*) arguments[i].c_str();
     }
+    argv[argc] = NULL;
     return EXIT_SUCCESS;
 }
 
@@ -66,26 +67,30 @@ int main(int argc, char** argv, char* envp[]) {
     char* buf;
     // MAIN LOOP
     std::string command = " ";
-    std::cout << boost::filesystem::current_path() << std::endl;
-    while (((buf = readline(" $ ")) != nullptr) && (command != "mexit")) {
+    std::cout << boost::filesystem::current_path();
+    while ((buf = readline(" $ ")) != nullptr) {
         if (strlen(buf) > 0) {
             add_history(buf);
         }
 
-        parse_arguments(buf, argc, argv);
+        if (parse_arguments(buf, argc, argv) != EXIT_SUCCESS){
+            continue;
+        }
 
         command = argv[0];
-        std::cout << command << std::endl;
+//        std::cout << command << std::endl;
 
          // Action.
          if (commands_map.find(command) != commands_map.end()){
              status = commands_map[command](argc, argv);
-
-        } else {
+             if (command == "mexit"){
+                 break;
+             }
+         } else {
             // Run external command
-        }
+         }
 
-        std::cout << boost::filesystem::current_path() << std::endl;
+        std::cout << boost::filesystem::current_path();
     }
     return 0;
 }

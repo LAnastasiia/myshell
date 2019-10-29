@@ -8,8 +8,6 @@
 #ifndef MYSHELL_MYSHELL_FUNCTIONS_H
 #define MYSHELL_MYSHELL_FUNCTIONS_H
 
-int parse_options(boost::program_options::options_description &desc,
-                  boost::program_options::variables_map &vm, int argc, char* argv[]);
 
 // Output error number.
 // supports [-h | --help]
