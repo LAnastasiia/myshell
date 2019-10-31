@@ -30,7 +30,7 @@ int mexit(int argc, char** argv);
 // Output given var_name-s or their values.
 // Accepts arbitrary num of var_name. If var_name starts with $ - output it's value lookup. Otherwise - var_name itself.
 // [text|$<var_name>] [text|$<var_name>]  [text|$<var_name>] ...
-//int mecho(int argc, char** argv);
+int mecho(int argc, char** argv);
 
 // Add global env-variable by given var_name.
 // If such variable already exists - overwrite it's value if also given (val).

@@ -20,6 +20,7 @@ int help_option_enabled(int argc, char** argv){
 
 
 int merrno(int argc, char** argv, int &my_errno){
+    /** Print code of the execution last command. */
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1){
         std::cout << "Usage: merrno [-h | --help]" << std::endl;
@@ -33,6 +34,7 @@ int merrno(int argc, char** argv, int &my_errno){
 
 
 int mpwd(int argc, char** argv){
+    /** Output current path. */
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1){
         std::cout << "Usage: mpwd [-h|--help]" << std::endl;
@@ -50,6 +52,7 @@ int mpwd(int argc, char** argv){
 
 
 int mcd(int argc, char** argv){
+    /** Change current location to <path>. */
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1){
         std::cout << "Usage: mcd <path> [-h|--help]" << std::endl;
@@ -82,7 +85,8 @@ int mcd(int argc, char** argv){
 
 
  int mexit(int argc, char** argv){
-    int help_option = help_option_enabled(argc, argv);
+     /** Exit from the shell. */
+     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1){
         std::cout << "Usage: mexit [-h|--help]" << std::endl;
         std::cout << "Exit from the shell." << std::endl;
@@ -106,24 +110,58 @@ int mcd(int argc, char** argv){
 }
 
 
-// int mecho(){}
+int mecho(int argc, char** argv){
+    /** Print value of an envariable or name if such variable exists. */
+    int help_option = help_option_enabled(argc, argv);
+    if (help_option == 1) {
+        std::cout << "Usage: mecho [-h | --help] [text|$<var_name>] [text|$<var_name>] ..." << std::endl;
+        std::cout << "Print value of an envariable or name if such variable exists." << std::endl;
+        return EXIT_SUCCESS;
+    } else if (help_option == -1){
+        return EXIT_FAILURE;
+
+    } else {
+        for (int i = 1; i < argc; i++){
+            if (argv[i][0] == '$') {
+                if (getenv(argv[i]+1) != nullptr){
+                    std::cout << getenv(argv[i]+1) << " ";
+                }
+            } else {
+                std::cout << argv[i] << " ";
+            }
+        }
+        std::cout << std::endl;
+        return EXIT_SUCCESS;
+    }
+}
+
 
 
 int mexport(int argc, char** argv){
-/**
-* Set an environment variable (and it's value if given).
-* @arguments
-  * number of arguments (expected 1 or 2);
-  * pointer to char array containing variable-name and (optional) variable-value;
-* @return status of execution.
-*/
-    if (argc == 2) {
-    return setenv(argv[0], argv[1], 1);
+    /** Set an environment variable (and it's value if given). */
+    int help_option = help_option_enabled(argc, argv);
+    if (help_option == 1) {
+        std::cout << "Usage: mexport [-h | --help] <var_name>[=VAL]" << std::endl;
+        std::cout << "Put a new envariable or update existing. Value also assigned if given." << std::endl;
+        return EXIT_SUCCESS;
+    } else if (help_option == -1){
+        return EXIT_FAILURE;
 
-} else if (argc == 1) {
-    return putenv(argv[0]);
-}
-    return -1;
+    } else {
+        if (argc == 2) {
+            for (size_t i = 0; *(argv[1]+i) != '\0'; i++){
+                if (argv[1][i] == '=' && argv[1][i+1] != '\0'){
+                    // crop
+                    std::string envariable (argv[1]);
+                    envariable = envariable.substr(0, i);
+                    // Export envariable with a value.
+                    return setenv(envariable.c_str(), &argv[1][i+1], 1);
+                }
+            }
+            return putenv(argv[1]);
+
+        } else return EXIT_FAILURE;
+    }
 }
 
 

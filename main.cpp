@@ -1,7 +1,8 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <string.h>
+#include <cstring>
+#include <sys/wait.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -45,7 +46,7 @@ int parse_arguments(char* buf, int &argc, char** &argv){
     for (i = 0; i < argc; i++){
         argv[i] = (char*) arguments[i].c_str();
     }
-    argv[argc] = NULL;
+    argv[argc] = nullptr;
     return EXIT_SUCCESS;
 }
 
@@ -63,6 +64,8 @@ int main(int argc, char** argv, char* envp[]) {
             std::make_pair("mpwd", [](int argc, char** argv)-> int {return mpwd(argc, argv);} ));
     commands_map.emplace(
             std::make_pair("mcd", [](int argc, char** argv)-> int {return mcd(argc, argv);} ));
+    commands_map.emplace(
+            std::make_pair("mecho", [](int argc, char** argv)-> int {return mecho(argc, argv);} ));
 
     int margc;
     char** margv;
