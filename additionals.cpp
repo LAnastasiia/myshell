@@ -2,12 +2,18 @@
 
 
 bool is_wildcard(std::string path){
+    bool opened_bracket = false;
     for (auto l: path){
-        if ((l == '*') || (l == '?') || (l == '['))
+        if ((l == '*') || (l == '?'))
+            return true;
+        if (l == '[')
+            opened_bracket = true;
+        if (opened_bracket && (l == ']'))
             return true;
     }
     return false;
 }
+
 
 
 void wildcard_matching(std::string wildcard, std::vector<std::string> &matched_objects){
