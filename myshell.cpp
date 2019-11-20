@@ -34,6 +34,16 @@ int execute_cmd(int margc, char* margv[], char* env[], myShellConfig& config){
     }
     std::string cmd = margv[0];
 
+    // Assignment handling (VAR=VAL).
+    if (cmd.find('=') != std::string::npos){
+        int argc = 2;
+        char** argv = (char**) malloc((argc + 1) * sizeof(char*));
+        argv[0] = strdup("mexport");
+        argv[1] = strdup(cmd.c_str());
+        argv[argc] = nullptr;
+        return config.internal_cmd_map.at("mexport")(argc, argv);
+    }
+
     if (config.has_internal_cmd(cmd)){
         return config.internal_cmd_map.at(cmd)(margc, margv);
     }
@@ -83,7 +93,11 @@ int main(int argc, char** argv, char* env[]) {
     std::cout << boost::filesystem::current_path();
 
     while ((buf = readline("$")) != nullptr) {
-        if (strlen(buf) > 0) add_history(buf);
+        if (strlen(buf) == 0){
+            std::cout << boost::filesystem::current_path(); continue;
+        }
+
+        add_history(buf);
 
         auto cmd_vec = split_str_by(std::string(buf), "|");  // Split into commands.
 
@@ -91,7 +105,11 @@ int main(int argc, char** argv, char* env[]) {
         if (cmd_vec.size() == 1) {
             auto cmd_str = strip_str_edges(cmd_vec[0], [](char s) { return s == ' ';});
 
-            auto args = split_str_by(cmd_str, " ", "\"");
+            auto args = split_str_by(cmd_str, " ", "\"");  // Split into arguments.
+            if (args.empty()) {
+                std::cout << "Bad input. " << std::endl << boost::filesystem::current_path();
+                continue;
+            }
 
             for (size_t i = 0; i < args.size(); i++ ){
                 if (is_wildcard(args[i])){
@@ -99,14 +117,28 @@ int main(int argc, char** argv, char* env[]) {
                     if (wildcard_matching(args[i], matched_args) == EXIT_SUCCESS){
                         args.erase(args.begin()+i);
                         args.insert(args.end(), matched_args.begin(), matched_args.end());
-                    } else { std::cout << "Couldn't match the wildcard in " << args[i] << std::endl; }
+                    } else {
+                        std::cout << "Couldn't match the wildcard in " << args[i] << std::endl << boost::filesystem::current_path();
+                        continue;
+                    }
+                }
+                else if (is_envariable(args[i])){
+                    args[i] = std::string {getenv(args[i].substr(1).c_str())};
                 }
             }
 
             if (parse_into_arguments(args, margc, margv) == EXIT_SUCCESS){
                 cmd_status = execute_cmd(margc, margv, env, config);
+                if (cmd_status == EXIT_FAILURE) {
+                    std::cout << "Failed " << cmd_vec[0] << std::endl << boost::filesystem::current_path();
+                    continue;
+                }
 
-            } else { std::cout << "Couldn't parse the arguments of " << cmd_vec[0] << std::endl; }
+            } else {
+                std::cout << "Couldn't parse the arguments of " << cmd_vec[0] << std::endl;
+                std::cout << boost::filesystem::current_path();
+                continue;
+            }
             free(margv); margc = 0;
         }
         std::cout << boost::filesystem::current_path();
@@ -116,4 +148,5 @@ int main(int argc, char** argv, char* env[]) {
 
 
 // ToDo:
-// Support for two sets of envariables.
+// (O) add merrno
+// (-) replace strip_str_edges' args with <template> and pass lambda with captured strip char (delimiter or escape).

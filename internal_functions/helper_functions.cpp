@@ -29,11 +29,11 @@ int wildcard_matching(const std::string& wildcard, std::vector<std::string>& mat
 
     } else {
         switch (glob_status){
-            case (GLOB_NOMATCH):
+            case GLOB_NOMATCH:
                 std::cerr << "No match was found for " << wildcard << " wildcard" << std::endl;
-            case (GLOB_NOSPACE):
+            case GLOB_NOSPACE:
                 std::cerr << "Out of memory error in wildcard matching" << std::endl;
-            case (GLOB_ABORTED):
+            case GLOB_ABORTED:
                 std::cerr << "Read error in wildcard matching" << std::endl;
             default:
                 std::cerr << "Unhandled error in wildcard matching" << std::endl;
@@ -73,26 +73,35 @@ std::vector<std::string> split_str_by(const std::string& str, const std::string&
 
 
 std::vector<std::string> split_str_by(const std::string& str, const std::string& delimiter, const std::string& escape){
-    size_t split_index = 0, new_split_index = 0;
+    size_t split_index = 0, new_split_index = 0; bool escape_sequence = false;
     std::vector<std::string> elements;
-    bool escape_sequence = false;
 
-    while (new_split_index != std::string::npos) {
-        if (new_split_index > split_index) {
+    while ((new_split_index >= split_index) && new_split_index != std::string::npos) {
+        if (new_split_index - split_index > 1) {
             elements.emplace_back(strip_str_edges(
                     str.substr(split_index, new_split_index - split_index),
-                    [](char s) { return s == ' ' || s == '"'; })
-            );
-            split_index = (escape_sequence) ? new_split_index + delimiter.length() : new_split_index + escape.length();
+                    [](char s) { return s == ' ' || s == '"'; }));
         }
-        escape_sequence = (str.substr(new_split_index, escape.length()) == escape) && (! escape_sequence);
+
+        split_index = new_split_index;
+        escape_sequence = (str.substr(split_index, escape.length()) == escape) && (! escape_sequence);
+
+        if (escape_sequence && (str.find(escape, split_index+1) == std::string::npos)) { return {}; }
+        // Fail split if the escape sequence doesn't close.
+
         new_split_index = (escape_sequence) ?
-                          std::max(str.find(delimiter, split_index), str.find(escape, split_index))
+                          std::max(
+                                  (str.find(delimiter, split_index+1) != std::string::npos) * str.find(delimiter, split_index+1),
+                                  (str.find(escape, split_index+1) != std::string::npos) * str.find(escape, split_index+1))
                           :
-                          std::min(str.find(delimiter, split_index), str.find(escape, split_index));
+                          std::min(str.find(delimiter, split_index+1), str.find(escape, split_index+1));
     }
     // Add the leftover elements
-    elements.emplace_back(strip_str_edges(str.substr(split_index), [](char s) { return s == ' ';}));
+    if (split_index < str.length() - 1){
+        elements.emplace_back(strip_str_edges(
+                str.substr(split_index),
+                [](char s) { return s == ' ' || s == '"'; }));
+    }
     return elements;
 }
 
@@ -115,4 +124,8 @@ int parse_into_arguments(std::vector<std::string>& arguments, int& argc, char**&
 
 bool is_file_executable(const std::string &file){
     return ! access (file.c_str(), X_OK);
+}
+
+bool is_envariable(const std::string& arg){
+    return arg[0] == '$';
 }

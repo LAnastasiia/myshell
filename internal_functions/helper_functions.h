@@ -14,6 +14,8 @@ int parse_into_arguments(std::vector<std::string>& arguments, int &argc, char** 
 
 bool is_wildcard(const std::string& path);
 
+bool is_envariable(const std::string& arg);
+
 int wildcard_matching(const std::string& wildcard, std::vector<std::string>& matched_objects);
 
 std::vector<std::string> split_str_by(const std::string& str, const std::string& delimiter);

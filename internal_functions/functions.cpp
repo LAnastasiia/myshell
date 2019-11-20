@@ -20,11 +20,11 @@ int help_option_enabled(int argc, char** argv){
 
 
 int merrno(int argc, char** argv, int &my_errno){
-    /** Print code of the execution last command. */
+    /** Print code of execution of the last command. */
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1){
         std::cout << "Usage: merrno [-h | --help]" << std::endl;
-        std::cout << "Print code of the execution last command." << std::endl;
+        std::cout << "Print code of execution of the last command." << std::endl;
         return EXIT_SUCCESS;
     } else if (help_option == -1)
         return EXIT_FAILURE;
@@ -145,7 +145,7 @@ int mexport(int argc, char** argv){
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1) {
         std::cout << "Usage: mexport [-h | --help] <var_name>[=VAL]" << std::endl;
-        std::cout << "Put a new envariable or update existing. Value also assigned if given." << std::endl;
+        std::cout << "Put a new envariable or update existing one. Value is also assigned if given." << std::endl;
         return EXIT_SUCCESS;
     } else if (help_option == -1){
         return EXIT_FAILURE;
