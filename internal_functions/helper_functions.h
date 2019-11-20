@@ -11,7 +11,7 @@
 #include <boost/concept_check.hpp>
 
 
-int parse_into_arguments(std::vector<std::string>& arguments, int &argc, char** &argv);
+int parse_into_argv(std::vector<std::string>& arguments, int &argc, char** &argv);
 
 bool is_wildcard(const std::string& path);
 
