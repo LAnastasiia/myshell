@@ -131,6 +131,10 @@ bool is_envariable(const std::string& arg){
     return arg[0] == '$';
 }
 
+bool has_background_execution(const std::string& arg){
+    return arg[arg.length() - 1] == '&';
+}
+
 bool is_redirect(const std::string& arg){
     for (const auto& l : arg) {
         if (l == '<' || l == '>'){
@@ -147,9 +151,10 @@ int parse_redirect(std::vector<std::string>& args, int i, std::map<int,std::stri
             // xx > xx
             if (args[i].length() == 1 && (0 < i && i < args.size()-1)) {
                 char prev_el = args[i-1][ args[i].length()-1 ];
+                std::cout << "prev_el" << prev_el << " " << (prev_el == '1') << std::endl;
                 if (isdigit(prev_el)){
                     if (prev_el == '1' || prev_el == '2'){
-                        cmd_streams[(int) prev_el] = args[i+1];
+                        cmd_streams[prev_el-'0'] = args[i+1];
                     } else return EXIT_FAILURE;
                 } else { cmd_streams[1] = args[i+1]; }
 
@@ -158,7 +163,7 @@ int parse_redirect(std::vector<std::string>& args, int i, std::map<int,std::stri
                     char prev_el = args[i-1][ args[i].length()-1 ];
                     if (isdigit(prev_el)){
                         if (prev_el == '1' || prev_el == '2'){
-                            cmd_streams[(int) prev_el] = std::string {&args[i][j+1]};
+                            cmd_streams[prev_el-'0'] = std::string {&args[i][j+1]};
                         } else return EXIT_FAILURE;
                     } else { cmd_streams[1] = std::string {&args[i][j+1]}; }
 
@@ -167,7 +172,7 @@ int parse_redirect(std::vector<std::string>& args, int i, std::map<int,std::stri
                 char prev_el = args[i][ j-1 ];
                 if (isdigit(prev_el)){
                     if (prev_el == '1' || prev_el == '2'){
-                        cmd_streams[(int) prev_el] = args[i+1];
+                        cmd_streams[prev_el-'0'] = args[i+1];
                     } else return EXIT_FAILURE;
                 } else { cmd_streams[1] = args[i+1]; }
 

@@ -30,10 +30,11 @@ int execute_file(const std::string& cmd_str, char ** margv, char **env){
 }
 
 
-int execute_cmd(int margc, char* margv[], char* env[],
-        myShellConfig& config, const std::map<int, std::string>& cmd_streams={}){
-    /* Execute a shell command (either internal or external).
-     * Return the status of execution. */
+int execute_cmd(int margc, char* margv[], char* env[], myShellConfig& config,
+        const std::map<int, std::string>& cmd_streams={},
+        bool background_execution=false){
+
+    // Executable.
     if (*margv[0] == '.'){
         execute_file(margv[0], margv, env);
     }
@@ -49,9 +50,11 @@ int execute_cmd(int margc, char* margv[], char* env[],
         return config.internal_cmd_map.at("mexport")(argc, argv);
     }
 
+    // Internal.
     if (config.has_internal_cmd(cmd)){
         return config.internal_cmd_map.at(cmd)(margc, margv);
     }
+    // External.
     else {
        pid_t pid = fork();
        switch (pid) {
@@ -62,9 +65,7 @@ int execute_cmd(int margc, char* margv[], char* env[],
            case (0): {
                for (const auto& p : cmd_streams){
                    int fd = open(p.second.c_str(), (p.first == 0) ? O_RDONLY : O_WRONLY); dup2(fd, p.first);
-                   if (fd == -1) {
-                       return EXIT_FAILURE;
-                   }
+                   if (fd == -1) return EXIT_FAILURE;
                }
 
                if (config.has_external_cmd(cmd)){
@@ -78,9 +79,12 @@ int execute_cmd(int margc, char* margv[], char* env[],
            }
            default:
                int child_status;
-               waitpid(pid, &child_status, 0);
-               if (child_status == EXIT_FAILURE)
-                   std::cout << "Command failed: " << cmd << " Exit code: " << child_status << std::endl;
+               if (! background_execution){
+                   waitpid(pid, &child_status, 0);
+                   if (child_status == EXIT_FAILURE)
+                       std::cout << "Command failed: " << cmd << " Exit code: " << child_status << std::endl;
+               }
+               return EXIT_SUCCESS;
        }
     }
 }
@@ -122,7 +126,9 @@ int main(int argc, char** argv, char* env[]) {
                 continue;
             }
 
-            std::map<int, std::string> cmd_stream; size_t redirect_index = 0;
+            std::map<int, std::string> cmd_stream;
+            size_t redirect_index = 0;
+            bool background_execution = false;
 
             for (size_t i = 0; i < args.size(); i++ ){
                 if (is_wildcard(args[i])){
@@ -152,13 +158,23 @@ int main(int argc, char** argv, char* env[]) {
                 }
             }
 
+            if (args.size() > 1 && args[1][0] == '&'){
+                // Background_execution
+                background_execution = true;
+                if (args[1].length() > 1) {
+                    args[1] = args[0].substr(1);
+                } else {
+                    args.erase(args.begin()+1);
+                }
+
+            }
             if (redirect_index > 0) {
                 args.erase(args.begin()+redirect_index, args.end());
                 redirect_index = 0;
             }
 
             if (parse_into_arguments(args, margc, margv) == EXIT_SUCCESS){
-                cmd_status = execute_cmd(margc, margv, env, config, cmd_stream);
+                cmd_status = execute_cmd(margc, margv, env, config, cmd_stream, background_execution);
                 if (cmd_status == EXIT_FAILURE) {
                     std::cout << "Failed " << cmd_vec[0] << std::endl << boost::filesystem::current_path();
                     continue;
@@ -179,7 +195,8 @@ int main(int argc, char** argv, char* env[]) {
 
 // ToDo:
 
-// redirect output of a process (>)
+// cmd pipeline
+// script execution current process
 
 // (O) add merrno
-// (-) replace strip_str_edges' args with <template> and pass lambda with captured strip char (delimiter or escape).
+// (-) replace strip_str_edges' args with <template> and pass lambda with captured strip-char (either delimiter or escape).
