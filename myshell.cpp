@@ -110,7 +110,6 @@ int main(int argc, char** argv, char* env[]) {
                 std::cout << "Bad input. " << std::endl << boost::filesystem::current_path();
                 continue;
             }
-
             for (size_t i = 0; i < args.size(); i++ ){
                 if (is_wildcard(args[i])){
                     std::vector<std::string> matched_args;
@@ -123,7 +122,10 @@ int main(int argc, char** argv, char* env[]) {
                     }
                 }
                 else if (is_envariable(args[i])){
-                    args[i] = std::string {getenv(args[i].substr(1).c_str())};
+                    auto envar = getenv(args[i].substr(1).c_str());
+                    if (envar) {
+                        args[i] = std::string {envar};
+                    }
                 }
             }
 
