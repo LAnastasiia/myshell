@@ -15,14 +15,32 @@ bool is_wildcard(const std::string& path){
 }
 
 
-void wildcard_matching(const std::string& wildcard, std::vector<std::string> &matched_objects){
-    glob_t globbuf;
-    glob(wildcard.c_str(), GLOB_DOOFFS, NULL, &globbuf);
+int wildcard_matching(const std::string& wildcard, std::vector<std::string>& matched_objects){
+    glob_t glob_buf;
+    memset(&glob_buf, 0, sizeof(glob_buf));
 
-    for (size_t i = 0; i < globbuf.gl_pathc; i++)
-        matched_objects.emplace_back(globbuf.gl_pathv[i]);
+    int glob_status = glob(wildcard.c_str(), GLOB_TILDE, nullptr, &glob_buf);
+    if (glob_status == EXIT_SUCCESS) {
+        for (size_t i = 0; i < glob_buf.gl_pathc; i++){
+            matched_objects.emplace_back(glob_buf.gl_pathv[i]);
+        }
+        globfree(&glob_buf);
+        return EXIT_SUCCESS;
 
-    globfree(&globbuf);
+    } else {
+        switch (glob_status){
+            case (GLOB_NOMATCH):
+                std::cerr << "No match was found for " << wildcard << " wildcard" << std::endl;
+            case (GLOB_NOSPACE):
+                std::cerr << "Out of memory error in wildcard matching" << std::endl;
+            case (GLOB_ABORTED):
+                std::cerr << "Read error in wildcard matching" << std::endl;
+            default:
+                std::cerr << "Unhandled error in wildcard matching" << std::endl;
+        }
+        globfree(&glob_buf);
+        return EXIT_FAILURE;
+    }
 }
 
 

@@ -89,12 +89,24 @@ int main(int argc, char** argv, char* env[]) {
 
         // Execute a single command.
         if (cmd_vec.size() == 1) {
-            auto cmd_str = cmd_vec[0];
-            auto args = split_str_by(std::string(buf), " ", "\"");
+            auto cmd_str = strip_str_edges(cmd_vec[0], [](char s) { return s == ' ';});
+
+            auto args = split_str_by(cmd_str, " ", "\"");
+
+            for (size_t i = 0; i < args.size(); i++ ){
+                if (is_wildcard(args[i])){
+                    std::vector<std::string> matched_args;
+                    if (wildcard_matching(args[i], matched_args) == EXIT_SUCCESS){
+                        args.erase(args.begin()+i);
+                        args.insert(args.end(), matched_args.begin(), matched_args.end());
+                    } else { std::cout << "Couldn't match the wildcard in " << args[i] << std::endl; }
+                }
+            }
+
             if (parse_into_arguments(args, margc, margv) == EXIT_SUCCESS){
                 cmd_status = execute_cmd(margc, margv, env, config);
 
-            } else { std::cout << "Couldn't parse the arguments of " << cmd_vec[0] << std::endl;}
+            } else { std::cout << "Couldn't parse the arguments of " << cmd_vec[0] << std::endl; }
             free(margv); margc = 0;
         }
         std::cout << boost::filesystem::current_path();
@@ -104,5 +116,4 @@ int main(int argc, char** argv, char* env[]) {
 
 
 // ToDo:
-// 1. Wildcard matching
-// 2. Support for two sets of envariables.
+// Support for two sets of envariables.

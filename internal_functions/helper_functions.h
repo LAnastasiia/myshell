@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <glob.h>
-#include <string>
+#include <string.h>
 #include <vector>
 #include <algorithm>
 
@@ -14,7 +14,7 @@ int parse_into_arguments(std::vector<std::string>& arguments, int &argc, char** 
 
 bool is_wildcard(const std::string& path);
 
-void wildcard_matching(const std::string& wildcard, std::vector<std::string> &matched_objects);
+int wildcard_matching(const std::string& wildcard, std::vector<std::string>& matched_objects);
 
 std::vector<std::string> split_str_by(const std::string& str, const std::string& delimiter);
 std::vector<std::string> split_str_by(const std::string& str, const std::string& delimiter, const std::string& escape);
