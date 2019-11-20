@@ -1,3 +1,4 @@
+#include <map>
 #include "helper_functions.h"
 
 
@@ -128,4 +129,63 @@ bool is_file_executable(const std::string &file){
 
 bool is_envariable(const std::string& arg){
     return arg[0] == '$';
+}
+
+bool is_redirect(const std::string& arg){
+    for (const auto& l : arg) {
+        if (l == '<' || l == '>'){
+            return true;
+        }
+    }
+    return false;
+}
+
+int parse_redirect(std::vector<std::string>& args, int i, std::map<int,std::string>& cmd_streams){
+    for (size_t j = 0; j < args[i].length(); j++){
+
+        if (args[i][j] == '>') {
+            // xx > xx
+            if (args[i].length() == 1 && (0 < i && i < args.size()-1)) {
+                char prev_el = args[i-1][ args[i].length()-1 ];
+                if (isdigit(prev_el)){
+                    if (prev_el == '1' || prev_el == '2'){
+                        cmd_streams[(int) prev_el] = args[i+1];
+                    } else return EXIT_FAILURE;
+                } else { cmd_streams[1] = args[i+1]; }
+
+            // xx >xx
+            } else if (j == 0 && (args[i].length() > 1 && i > 0)) {
+                    char prev_el = args[i-1][ args[i].length()-1 ];
+                    if (isdigit(prev_el)){
+                        if (prev_el == '1' || prev_el == '2'){
+                            cmd_streams[(int) prev_el] = std::string {&args[i][j+1]};
+                        } else return EXIT_FAILURE;
+                    } else { cmd_streams[1] = std::string {&args[i][j+1]}; }
+
+            // xx> xx
+            } else if (j == args[i].length()-1 && (i < args.size()-1 && args[i].length() > 1)) {
+                char prev_el = args[i][ j-1 ];
+                if (isdigit(prev_el)){
+                    if (prev_el == '1' || prev_el == '2'){
+                        cmd_streams[(int) prev_el] = args[i+1];
+                    } else return EXIT_FAILURE;
+                } else { cmd_streams[1] = args[i+1]; }
+
+            } else {
+                return EXIT_FAILURE;
+            }
+        } else if (args[i][j] == '<') {
+            // xx < xx
+            if (args[i].length() == 1 && (0 < i && i < args.size()-1)) {
+                cmd_streams[0] = args[i+1];
+            // xx <xx
+            } else if (j == 0 && (args[i].length() > 1 && i > 0)) {
+                cmd_streams[0] = std::string {& args[i][j+1]};
+            // xx< xx
+            } else if (j > 0 && (args[i].length() > 1 && i < args.size()-1)){
+                cmd_streams[0] = args[i+1];
+            } else { return EXIT_FAILURE; }
+        }
+    }
+    return EXIT_SUCCESS;
 }

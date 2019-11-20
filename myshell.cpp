@@ -1,10 +1,14 @@
 #include <iostream>
 #include <cstring>
 #include <sys/wait.h>
+#include <cctype>
+#include <iostream>
+#include <cstring>
 
 #include <boost/filesystem.hpp>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <fcntl.h>
 
 #include "internal_functions/helper_functions.h"
 #include "myShellConfig.h"
@@ -26,7 +30,8 @@ int execute_file(const std::string& cmd_str, char ** margv, char **env){
 }
 
 
-int execute_cmd(int margc, char* margv[], char* env[], myShellConfig& config){
+int execute_cmd(int margc, char* margv[], char* env[],
+        myShellConfig& config, const std::map<int, std::string>& cmd_streams={}){
     /* Execute a shell command (either internal or external).
      * Return the status of execution. */
     if (*margv[0] == '.'){
@@ -49,13 +54,19 @@ int execute_cmd(int margc, char* margv[], char* env[], myShellConfig& config){
     }
     else {
        pid_t pid = fork();
-
        switch (pid) {
            case (-1): {
                std::cout << "Failed to fork()" << std::endl;
                return EXIT_FAILURE;
            }
            case (0): {
+               for (const auto& p : cmd_streams){
+                   int fd = open(p.second.c_str(), (p.first == 0) ? O_RDONLY : O_WRONLY); dup2(fd, p.first);
+                   if (fd == -1) {
+                       return EXIT_FAILURE;
+                   }
+               }
+
                if (config.has_external_cmd(cmd)){
                    execve((config.bin_path + '/' + cmd).c_str(), margv, env);
                } else {
@@ -110,6 +121,9 @@ int main(int argc, char** argv, char* env[]) {
                 std::cout << "Bad input. " << std::endl << boost::filesystem::current_path();
                 continue;
             }
+
+            std::map<int, std::string> cmd_stream; size_t redirect_index = 0;
+
             for (size_t i = 0; i < args.size(); i++ ){
                 if (is_wildcard(args[i])){
                     std::vector<std::string> matched_args;
@@ -127,10 +141,24 @@ int main(int argc, char** argv, char* env[]) {
                         args[i] = std::string {envar};
                     }
                 }
+
+                if (parse_redirect(args, i, cmd_stream) == EXIT_SUCCESS){
+                    if (is_redirect(args[i]) && redirect_index == 0) {
+                        redirect_index = i;
+                    }
+                } else {
+                    std::cout << "Couldn't parse redirect in " << args[i] << std::endl << boost::filesystem::current_path();
+                    continue;
+                }
+            }
+
+            if (redirect_index > 0) {
+                args.erase(args.begin()+redirect_index, args.end());
+                redirect_index = 0;
             }
 
             if (parse_into_arguments(args, margc, margv) == EXIT_SUCCESS){
-                cmd_status = execute_cmd(margc, margv, env, config);
+                cmd_status = execute_cmd(margc, margv, env, config, cmd_stream);
                 if (cmd_status == EXIT_FAILURE) {
                     std::cout << "Failed " << cmd_vec[0] << std::endl << boost::filesystem::current_path();
                     continue;
@@ -150,5 +178,8 @@ int main(int argc, char** argv, char* env[]) {
 
 
 // ToDo:
+
+// redirect output of a process (>)
+
 // (O) add merrno
 // (-) replace strip_str_edges' args with <template> and pass lambda with captured strip char (delimiter or escape).
