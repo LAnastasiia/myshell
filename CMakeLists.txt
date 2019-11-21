@@ -13,7 +13,7 @@ set(ICU_MAJOR_VER "57")
 set(ICU_FULL_VERSION "${ICU_MAJOR_VER}.1")
 
 add_executable(myshell myshell.cpp internal_functions/functions.cpp internal_functions/helper_functions.cpp myShellConfig.cpp)
-add_executable(mycat mycat/main.cpp)
+#add_executable(mycat mycat/main.cpp)
 
 target_link_libraries(myshell readline)
 target_link_libraries(myshell ${Boost_LIBRARIES})

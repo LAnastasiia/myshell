@@ -200,81 +200,116 @@ int main(int argc, char** argv, char* env[]) {
 
             /*
              * At each iteration we are working with 2 child processes:
-             * - 1 - writes its output into the pipe
-             * - 2 - gets its input from the pipe - child of executor :)
+             * - 1 - reader - gets its input from the pipe
+             * - 2 - writer - new child forked from reader for each command - redirects its output into the pipe
              *
+             * The parent process is waitpid()-ing for reader.
              * */
 
-            pid_t pid_init = fork();
-            int i = 0;
-            while (i + 1 < cmd_vec.size()) {
-                if (pid_init == 0) {
+            pid_t pid_reader = fork();
+            if (pid_reader == -1) continue;
+            if (pid_reader == 0){
+
+                for (size_t i = 0; i < cmd_vec.size()-1; i++) {
+
+                    // Create pipe
                     int pds[2];
                     int p = pipe(pds);
-                    if (p == -1) {
-                        std::cout << "Failed to construct a pipe" << std::endl;
-                        exit(EXIT_FAILURE);
-                    }
+                    if (p == -1) {std::cerr << "Failed to construct a pipe" << std::endl; exit(EXIT_FAILURE);}
 
-                    pid_t pid_next = fork();
-                    if (pid_next == -1) break;
+                    pid_t pid_writer = fork();
+                    if (pid_writer == -1) { std::cerr << "Failed to fork from writer" << std::endl; exit(EXIT_FAILURE);}
                     else {
-                        if (pid_next == 0) {
-                            // reader
-                            if (close(pds[1]) == -1) {
-                                std::cout << "Failed to close 'write' descriptor for reading." << std::endl;
-                                break;
+                        if (pid_writer == 0) {
+                            if (close(pds[0]) == -1)
+                            { std::cerr << "Failed to close 'read' descriptor for writing." << std::endl; _exit(EXIT_FAILURE); }
+
+                            if (pds[1] != STDOUT_FILENO) {
+                                dup2(pds[1], STDOUT_FILENO);
                             }
+
+                            int margc; char **margv; cmdConfig cmd_config;
+                            auto cmd_str = strip_str_edges(cmd_vec[i], [](char s) { return s == ' '; });
+                            if (cmd_str.empty())
+                            { std::cerr << "Empty command." << std::endl; _exit(EXIT_FAILURE); }
+
+                            auto args = split_str_by(cmd_str, " ", "\"");  // Split into arguments.
+
+                            if (prepare_cmd_args(args, cmd_config) == EXIT_SUCCESS) {
+                                if (parse_into_argv(args, margc, margv) == EXIT_SUCCESS) {
+                                    cmd_status = execute_cmd(margc, margv, env, config, cmd_config);
+                                } else {std::cerr << "W: couldn't parse the arguments." << std::endl;}
+                            } else {std::cerr << "W: couldn't pre-process the arguments." << std::endl;}
+
+                            if (close(pds[1]) == -1)
+                            { std::cerr << "W: Failed to close pipe descriptor in writer." << std::endl; exit(EXIT_FAILURE); }
+                            free(margv); margc = 0;
+
+                            std::cerr << "writer executed " << cmd_status << std::endl;
+                            _exit(cmd_status);
+
+                        } else {
+                            int writer_status;
+                            waitpid(pid_reader, &writer_status, 0);
+                            if (writer_status != EXIT_SUCCESS)
+                            { exit(EXIT_FAILURE); }
+
+                            if (close(pds[1]) == -1)
+                            { std::cout << "R: Failed to close 'write' descriptor for reading." << std::endl; exit(EXIT_FAILURE); }
+
                             if (pds[0] != STDIN_FILENO) {
                                 dup2(pds[0], STDIN_FILENO);
                             }
-                            int init_status;
-                            waitpid(pid_init, &init_status, 0);
-                            if (WEXITSTATUS(init_status) == EXIT_SUCCESS) {
-                                i++;
-                                pid_init = pid_next;
-                            } else { _exit(EXIT_FAILURE); }
+                            if (close(pds[0]) == -1)
+                            { std::cerr << "R: Failed to close pipe descriptor." << std::endl; exit(EXIT_FAILURE); }
 
-                        } else { // writer
-                            if (close(pds[0]) == -1) {
-                                std::cout << "Failed to close 'read' descriptor for writing." << std::endl;
+                            if (i == cmd_vec.size()-2){
+                                // There's no next command, so this is the last reader. --> just execute
+                                int margc; char **margv; cmdConfig cmd_config;
+                                auto cmd_str = strip_str_edges(cmd_vec[i+1], [](char s) { return s == ' '; });
+                                if (cmd_str.empty())
+                                { std::cerr << "Empty command." << std::endl; _exit(EXIT_FAILURE); }
+                                auto args = split_str_by(cmd_str, " ", "\"");
+                                if (prepare_cmd_args(args, cmd_config) == EXIT_SUCCESS) {
+                                    if (parse_into_argv(args, margc, margv) == EXIT_SUCCESS) {
+                                        cmd_status = execute_cmd(margc, margv, env, config, cmd_config);
+                                    } else {std::cerr << "R: couldn't parse the arguments." << std::endl;}
+                                } else {std::cerr << "R: couldn't pre-process the arguments." << std::endl;}
+
+                                free(margv); margc = 0;
+
+                                _exit(cmd_status);
+                            }
+
+                            // close descriptor to the old pipe
+                            if (dup2(STDIN_FILENO, pds[0]) == -1) {
+                                std::cerr << "R: Failed to redirect a descriptor back to stdin ";
                                 _exit(EXIT_FAILURE);
                             }
-                            if (pds[1] != STDOUT_FILENO) {
-                                dup2(pds[1], STDOUT_FILENO);
-
-                                int margc;
-                                char **margv;
-                                cmdConfig cmd_config;
-
-                                auto cmd_str = strip_str_edges(cmd_vec[i], [](char s) { return s == ' '; });
-                                if (cmd_str.empty()) _exit(EXIT_FAILURE);
-
-                                auto args = split_str_by(cmd_str, " ", "\"");  // Split into arguments.
-                                if (prepare_cmd_args(args, cmd_config) == EXIT_SUCCESS) {
-                                    if (parse_into_argv(args, margc, margv) != EXIT_SUCCESS) {
-                                        cmd_status = execute_cmd(margc, margv, env, config, cmd_config);
-                                    }
-                                }
-                                close(pds[1]);
-                                free(margv);
-                                margc = 0;
-                                _exit(cmd_status);
+                            if (close(pds[0]) == -1) {
+                                std::cerr << "R: Failed to close pipe descriptor in reader." << std::endl;
+                                exit(EXIT_FAILURE);
                             }
                         }
                     }
-                }
-            }
 
+                }
+            } else {
+                int mid_status = 0;
+                waitpid(pid_reader, &mid_status, 0);
+                if (mid_status == EXIT_FAILURE){ std::cerr << "Command pipeline failed." << std::endl;}
+            }
         }
         std::cout << boost::filesystem::current_path();
     }
     return EXIT_SUCCESS;
 }
 
+
 // ToDo:
 
-// (!) script execution current process
+// (!) script execution in the current process
 
-// (O) add merrno
+// (-) pidexplain() for witpid cerr msg https://linux.die.net/man/3/explain_waitpid
+// (O) fix merrno
 // (-) replace strip_str_edges' args with <template> and pass lambda with captured strip-char (either delimiter or escape).
