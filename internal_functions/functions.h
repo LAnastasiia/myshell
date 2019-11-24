@@ -17,7 +17,7 @@ int merrno(int argc, char** argv, int &my_errno);
 
 // Output current working directory.
 //[-h|--help]
-int mpwd(int argc, char** argv);
+int mpwd(int argc, char** argv, int fd);
 
 // Go to the given path.
 //<path> [-h|--help]

@@ -33,7 +33,7 @@ int merrno(int argc, char** argv, int &my_errno){
 }
 
 
-int mpwd(int argc, char** argv){
+int mpwd(int argc, char** argv, int fd){
     /** Output current path. */
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1){
@@ -46,6 +46,8 @@ int mpwd(int argc, char** argv){
 
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
+
+
     std::cout << cwd << std::endl;
     return EXIT_SUCCESS;
 }
@@ -103,6 +105,7 @@ int mcd(int argc, char** argv){
      for (int i = 1; i < argc; i++){
          if (argv[i][0] != '-'){
              int x = std::stoi(argv[i]);
+            std::cout << "EE" << std::endl;
              exit(x);
          }
      }
@@ -111,7 +114,7 @@ int mcd(int argc, char** argv){
 
 
 int mecho(int argc, char** argv){
-    /** Print value of an envariable or name if such variable exists. */
+    /** Print value of an envariable or it's name if such envariable exists. */
     int help_option = help_option_enabled(argc, argv);
     if (help_option == 1) {
         std::cout << "Usage: mecho [-h | --help] [text|$<var_name>] [text|$<var_name>] ..." << std::endl;

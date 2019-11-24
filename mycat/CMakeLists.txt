@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 set(ICU_MAJOR_VER "57")
 set(ICU_FULL_VERSION "${ICU_MAJOR_VER}.1")
 
-add_executable(mycat main.cpp)
+add_executable(mycat mycat_main.cpp)
 
 find_package(Boost COMPONENTS program_options REQUIRED)
 

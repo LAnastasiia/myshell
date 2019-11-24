@@ -225,6 +225,8 @@ private:
 int main(int argc, const char *argv[]) {
     MyCat kitty;
 
+    std::cout << "KITTY" << std::endl;
+
     for(int i = 0; i < 3; i++ ){
         std::cout << argv[i] << std::endl;
     }
